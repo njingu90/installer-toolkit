@@ -1,0 +1,67 @@
+# .github/workflows/lint-and-test.yml
+name: Lint & Test
+
+on:
+  push:
+    paths:
+      - 'main.sh'
+      - 'scripts/**/*.sh'
+  pull_request:
+    paths:
+      - 'main.sh'
+      - 'scripts/**/*.sh'
+
+jobs:
+  # 1. Lint with ShellCheck
+  shellcheck:
+    name: ShellCheck Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: koalaman/shellcheck-action@v1
+        with:
+          # you can pin a ShellCheck version or omit to get latest
+          shellcheck_version: 'latest'
+          files: |
+            main.sh
+            scripts/**/*.sh
+
+  # 2. Format-check with shfmt
+  shfmt:
+    name: shfmt Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: mvdan/shfmt-action@v2
+        with:
+          # enforce default shfmt formatting
+          args: -d
+          files: |
+            main.sh
+            scripts/**/*.sh
+
+  # 3. Smoke-test installers with Bats
+  bats:
+    name: BATS Smoke Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # install Bats for shell unit tests
+      - name: Install Bats
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      # run any .bats tests you create under tests/
+      - name: Run BATS tests
+        run: |
+          if [ -d tests ]; then
+            bats tests
+          else
+            echo "⚠️  no tests/ directory found, skipping BATS"
+          fi
+
+      # ensure your main.sh at least shows help without error
+      - name: Smoke-test main.sh --help
+        run: bash main.sh help
