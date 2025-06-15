@@ -1,0 +1,12 @@
+# versions.txt — leave blank or set to LATEST to always pull the latest release
+AWSCLI=2.11.16
+TERRAFORM=1.4.6
+DOCKER=20.10.24
+KUBECTL=1.27.3
+VELERO=LATEST
+HELM=3.11.0
+ANSIBLE=2.14.3
+PACKER=1.9.3
+VAULT=LATEST
+CONSUL=1.13.4
+EKSCTL=LATEST
