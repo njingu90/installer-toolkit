@@ -5,7 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
 
-# ── Helpers ─────────────────────────────────────
+# ── Helpers ───────────────────────f──────────────
 log()     { echo -e "ℹ️  $*"; }
 success() { echo -e "✅  $*"; }
 warn()    { echo -e "⚠️  $*" >&2; }
