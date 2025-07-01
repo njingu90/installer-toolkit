@@ -41,7 +41,7 @@ Sure! Here’s a clean, well-structured **README.md** file you can drop directly
 ### Clone this repository
 
 ```bash
-git clone https://github.com/yourusername/installer-toolkit.git
+git clone https://github.com/njingu90/installer-toolkit.git
 cd installer-toolkit
 ```
 
