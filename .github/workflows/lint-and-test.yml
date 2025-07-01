@@ -18,13 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: koalaman/shellcheck-action@v1
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@2.0.0
         with:
-          # you can pin a ShellCheck version or omit to get latest
-          shellcheck_version: 'latest'
-          files: |
-            main.sh
-            scripts/**/*.sh
+          scandir: .
+          ignore_paths: |
+            .git
+            .github
 
   # 2. Format-check with shfmt
   shfmt:
@@ -32,13 +32,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: mvdan/shfmt-action@v2
+      - name: Run shfmt
+        uses: shfmt-dev/action-shfmt@v3
         with:
-          # enforce default shfmt formatting
-          args: -d
-          files: |
-            main.sh
-            scripts/**/*.sh
+          args: -d main.sh scripts
 
   # 3. Smoke-test installers with Bats
   bats:
