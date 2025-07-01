@@ -1,6 +1,5 @@
 #  🚀 Installer Toolkit
 Simple Bash installer for dev tools
-````markdown
 # Multi-Installer CLI
 
 [![Lint & Test](https://github.com/owner/repo/actions/workflows/lint-and-test.yml/badge.svg)](https://github.com/owner/repo/actions/workflows/lint-and-test.yml)  
