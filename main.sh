@@ -11,40 +11,48 @@ success() { echo -e "✅  $*"; }
 warn()    { echo -e "⚠️  $*" >&2; }
 error()   { echo -e "❌  $*" >&2; exit 1; }
 
-# usage / help
+# Modified usage function
 usage() {
   cat <<EOF
 Usage:
   $(basename "$0") help
+  $(basename "$0") --all
   $(basename "$0") TOOL [TOOL...]
   $(basename "$0") (no args → fzf)
 
 Examples:
   $(basename "$0") help
+  $(basename "$0") --all
   $(basename "$0") awscli terraform docker
   $(basename "$0") (and select with fzf)
+
+Available tools:
+$(ls "$SCRIPTS_DIR"/install_*.sh 2>/dev/null | xargs -n1 basename | sed -E 's/install_(.*)\.sh/  - \1/')
 
 If you run with no arguments and have 'fzf' installed, you can select tools interactively.
 EOF
 }
 
 # ── Pick tools ───────────────────────────────────
+get_available_tools() {
+  ls "$SCRIPTS_DIR"/install_*.sh 2>/dev/null | xargs -n1 basename | sed -E 's/install_(.*)\.sh/\1/'
+}
+
 if (( $# == 0 )); then
   if command -v fzf &>/dev/null; then
     log "Select tool(s) to install (multi-select with TAB, ENTER when done):"
-    mapfile -t tools < <(
-      ls "$SCRIPTS_DIR"/install_*.sh 2>/dev/null \
-        | xargs -n1 basename \
-        | sed -E 's/install_(.*)\.sh/\1/' \
-        | fzf --multi --prompt="→ "
-    )
+    mapfile -t tools < <(get_available_tools | fzf --multi --prompt="→ ")
     (( ${#tools[@]} )) || { usage; exit; }
   else
-    usage; exit
+    usage; exit 1
   fi
 else
   case "$1" in
     help|-h|--help) usage; exit ;;
+    --all) 
+      mapfile -t tools < <(get_available_tools)
+      log "Installing all available tools..."
+      ;;
     *) tools=("$@") ;;
   esac
 fi
