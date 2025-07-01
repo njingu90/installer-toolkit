@@ -51,5 +51,11 @@ jobs:
       - name: Make main.sh executable
         run: chmod +x main.sh
 
+      - name: Make all scripts in scripts/ executable
+        run: |
+          if [ -d scripts ]; then
+            chmod +x scripts/*.sh
+          fi
+
       - name: Run installation for all tools
         run: sudo ./main.sh --all
