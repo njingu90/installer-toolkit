@@ -7,6 +7,11 @@ success() { echo -e "✅  terraform: $*"; }
 warn()    { echo -e "⚠️  terraform: $*" >&2; }
 error()   { echo -e "❌  terraform: $*" >&2; exit 1; }
 
+# ── Check dependencies ────────────────────────────
+command -v jq >/dev/null 2>&1 || { error "jq is required but not installed."; }
+command -v unzip >/dev/null 2>&1 || { error "unzip is required but not installed."; }
+command -v curl >/dev/null 2>&1 || { error "curl is required but not installed."; }
+
 # ── Detect OS & ARCH ─────────────────────────────
 OS="$(uname | tr '[:upper:]' '[:lower:]')"
 case "$OS" in
@@ -21,26 +26,49 @@ case "$ARCH_RAW" in
   *) error "unsupported architecture: $ARCH_RAW" ;;
 esac
 
-# ── Get latest Terraform version ────────────────
-TAG="$(curl -sL https://releases.hashicorp.com/terraform/ | grep -oP 'terraform/\K[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)"
-if [[ -z "$TAG" ]]; then
-  error "could not determine latest Terraform version"
-fi
-log "resolved latest version → $TAG"
+terraform-install() {
+  local BIN="${HOME}/bin/terraform"
+  if [[ -f "$BIN" ]]; then
+    log "$("$BIN" version) already installed at $BIN"
+    return 0
+  fi
 
-# ── Build download URL ──────────────────────────
-FILE="terraform_${TAG}_${OS}_${ARCH}.zip"
-URL="https://releases.hashicorp.com/terraform/${TAG}/${FILE}"
+  log "Fetching latest Terraform release info..."
+  local INDEX_JSON
+  INDEX_JSON=$(curl -sL https://releases.hashicorp.com/terraform/index.json)
+  local LATEST_VERSION
+  LATEST_VERSION=$(echo "$INDEX_JSON" | jq -r '.versions | to_entries | map(select(.value.builds[].os=="'"$OS"'" and .value.builds[].arch=="'"$ARCH"'")) | sort_by(.key) | last.key')
+  [[ -z "$LATEST_VERSION" ]] && error "Could not determine latest Terraform version for $OS/$ARCH"
 
-# ── Download ────────────────────────────────────
-log "downloading Terraform from $URL"
-curl -sL --fail "$URL" -o "$FILE"
+  local DOWNLOAD_URL
+  DOWNLOAD_URL=$(echo "$INDEX_JSON" | jq -r --arg ver "$LATEST_VERSION" --arg os "$OS" --arg arch "$ARCH" '
+    .versions[$ver].builds[] | select(.os==$os and .arch==$arch) | .url
+  ')
+  [[ -z "$DOWNLOAD_URL" ]] && error "Could not find download URL for $OS/$ARCH"
 
-# ── Extract & install ──────────────────────────
-unzip -q "$FILE"
-sudo install -m 0755 terraform /usr/local/bin/terraform
+  log "Downloading Terraform $LATEST_VERSION from $DOWNLOAD_URL"
+  local TMP_ZIP="/tmp/terraform_${LATEST_VERSION}_${OS}_${ARCH}.zip"
+  curl -sSL "$DOWNLOAD_URL" -o "$TMP_ZIP"
 
-# ── Cleanup ─────────────────────────────────────
-rm -f "$FILE" terraform
+  mkdir -p "${HOME}/bin"
+  (cd "${HOME}/bin" && unzip -o "$TMP_ZIP")
 
-success "Terraform installed successfully (version ${TAG})"
+  # Ensure PATH is set in .bashrc
+  if ! grep -q 'export PATH="$HOME/bin:$PATH"' ~/.bashrc; then
+    echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+  fi
+
+  rm -f "$TMP_ZIP"
+
+  log "Installed: $("${HOME}/bin/terraform" version)"
+
+  cat << EOF
+
+Run the following to reload your PATH with terraform:
+  source ~/.bashrc
+EOF
+
+  success "Terraform installed successfully (version $LATEST_VERSION)"
+}
+
+terraform-install
