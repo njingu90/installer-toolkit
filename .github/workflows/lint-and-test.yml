@@ -6,10 +6,12 @@ on:
     paths:
       - 'main.sh'
       - 'scripts/**/*.sh'
+      - '.github/workflows/lint-and-test.yml'
   pull_request:
     paths:
       - 'main.sh'
       - 'scripts/**/*.sh'
+  workflow_dispatch:
 
 jobs:
   # 1. Lint with ShellCheck
