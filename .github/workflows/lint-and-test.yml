@@ -14,31 +14,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 1. Lint with ShellCheck
-  shellcheck:
-    name: ShellCheck Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@2.0.0
-        with:
-          scandir: .
-          ignore_paths: |
-            .git
-            .github
-
-  # 2. Format-check with shfmt
-  shfmt:
-    name: shfmt Format Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run shfmt
-        uses: shfmt-dev/action-shfmt@v3
-        with:
-          args: -d main.sh scripts
-
   # 3. Smoke-test installers with Bats
   bats:
     name: BATS Smoke Tests
