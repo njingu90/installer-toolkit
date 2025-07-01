@@ -40,3 +40,16 @@ jobs:
       # ensure your main.sh at least shows help without error
       - name: Smoke-test main.sh --help
         run: bash main.sh help
+
+  # 4. Test installation of all tools
+  install-all-tools:
+    name: Install All Tools
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Make main.sh executable
+        run: chmod +x main.sh
+
+      - name: Run installation for all tools
+        run: sudo ./main.sh --all
