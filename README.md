@@ -83,22 +83,24 @@ For automated installation (e.g., EC2 User Data):
 
 ```bash
 #!/usr/bin/env bash
-set -euo pipefail
+set -eu
 LOG_DIR="/var/log/toolkit-install"
 LOG_FILE="$LOG_DIR/install.log"
 sudo mkdir -p "$LOG_DIR"
 
 {
   echo "====== System update & prerequisites ======"
-  sudo apt update -y && sudo apt upgrade -y
-  sudo apt install -y git curl unzip
+  sudo apt-get update -y && sudo apt-get upgrade -y
+  sudo apt-get install -y git curl unzip jq
 
   echo "====== Installing toolkit ======"
-  git clone https://github.com/njingu90/installer-toolkit.git
+  git clone --depth 1 https://github.com/njingu90/installer-toolkit.git
   cd installer-toolkit
   chmod +x main.sh
+  chmod +x scripts/*.sh
   ./main.sh --all
 
+  echo "====== Done! If you installed tools like terraform, run: source ~/.bashrc"
 } 2>&1 | sudo tee "$LOG_FILE"
 ```
 
