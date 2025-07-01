@@ -1,4 +1,4 @@
-# installer-toolkit
+#  🚀 Installer Toolkit
 Simple Bash installer for dev tools
 ````markdown
 # Multi-Installer CLI
@@ -6,105 +6,119 @@ Simple Bash installer for dev tools
 [![Lint & Test](https://github.com/owner/repo/actions/workflows/lint-and-test.yml/badge.svg)](https://github.com/owner/repo/actions/workflows/lint-and-test.yml)  
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)  
 
-> A simple, pluggable Bash CLI for installing common developer tools with version pinning, automatic “latest” fallback, and optional interactive selection via fzf.
+> This repository provides simple, clean, and reliable shell scripts to install the **latest version** of popular developer and DevOps tools.
 
 ---
 
-## 🚀 Features
+Sure! Here’s a clean, well-structured **README.md** file you can drop directly into your repo to explain how to use your installer toolkit.
 
-- **Modular** — drop any `scripts/install_<tool>.sh` and have it picked up automatically.  
-- **Version pinning** via `versions.txt`, with graceful fallback to the latest release.  
-- **Interactive mode** — multi-select your tools with [fzf](https://github.com/junegunn/fzf) when you run `./main.sh` with no arguments.  
+---
+
+---
+
+## 💡 Supported tools
+
+* AWS CLI
+* kubectl
+* eksctl
+* Terraform
+* Velero
+* Docker & Docker Compose
 
 ---
 
 ## ⚙️ Prerequisites
 
-- **Bash** 4.0+  
-- **curl**, **tar**, **sudo**  
-- (Optional) **fzf** for interactive selection  
+* Linux (Ubuntu preferred) or macOS (some scripts, like Docker, are Linux-focused).
+* `bash` shell.
+* `sudo` access for installing system binaries.
+* [fzf](https://github.com/junegunn/fzf) (optional, for interactive tool selection).
 
 ---
 
-## 🛠️ Installation
+## 🚀 Usage
+
+### Clone this repository
 
 ```bash
-git clone https://github.com/owner/repo.git
-cd repo
-chmod +x main.sh scripts/*.sh
-````
-
----
-
-## 🔧 Configuration
-
-Create or edit `versions.txt` in the repo root:
-
-```ini
-# versions.txt — use LATEST or leave blank to always fetch the newest release
-AWSCLI=2.11.16
-TERRAFORM=1.4.6
-DOCKER=20.10.24
-KUBECTL=1.27.3
-VELERO=LATEST
+git clone https://github.com/yourusername/installer-toolkit.git
+cd installer-toolkit
 ```
 
-* Lines beginning with `#` are ignored.
-* Lowercase or uppercase tool names both work (`velero` or `VELERO`).
+---
+
+### Run the main installer script
+
+#### 📄 Show help
+
+```bash
+./main.sh help
+```
 
 ---
 
-## 🎯 Usage
+#### ⚡ Install specific tools
 
 ```bash
-# Show help
-./main.sh help
+./main.sh awscli terraform docker
+```
 
-# Install a single tool
-./main.sh velero
+This will install the **latest version** of each specified tool.
 
-# Install multiple tools
-./main.sh install terraform awscli kubectl
+---
 
-# Interactive multi-select (requires fzf)
+#### ✨ Interactive selection (if `fzf` is installed)
+
+```bash
 ./main.sh
 ```
 
+* You will be presented with an interactive list.
+* Use `TAB` to select multiple tools and `ENTER` to confirm.
+
 ---
 
-## ➕ Adding New Tools
+## 🗂️ Project structure
 
-1. Create an executable script at `scripts/install_<tool>.sh`.
-2. Ensure it accepts a single argument (`$1` = requested version or “LATEST”).
-3. Add a line in `versions.txt` with the desired default version.
-
-Example:
-
-```bash
-# scripts/install_foo.sh
-#!/usr/bin/env bash
-set -euo pipefail
-VERSION="${1:-LATEST}"
-# …fetch and install foo at $VERSION…
+```
+scripts/
+├── install_awscli.sh
+├── install_docker.sh
+├── install_eksctl.sh
+├── install_kubectl.sh
+├── install_terraform.sh
+├── install_velero.sh
+main.sh
+README.md
 ```
 
+* **scripts/**: Contains individual install scripts (one per tool).
+* **main.sh**: Main entry point that manages tool selection and execution.
+
 ---
 
-## 🤝 Contributing
+## ✅ How it works
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for:
+* Each `install_*.sh` script is designed to always download and install the **latest** official release for its tool.
+* No manual version configuration needed.
+* Each script logs progress clearly and exits on failure.
 
-* Code style & linting (we use **shellcheck**).
-* Branch & PR workflow.
-* Issue templates for bugs & feature requests.
+---
 
-All contributions welcome!
+## 💬 Notes
+
+* On Linux, these scripts may add or update system binaries in `/usr/local/bin`, so `sudo` is required.
+* You may need to restart your shell session or run `source ~/.bashrc` after installing certain tools.
+
+---
+
+## ⭐ Contributing
+
+Contributions and improvements are welcome! Feel free to open issues or PRs.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the **MIT License**. See [LICENSE](./LICENSE) for details.
+This project is licensed under the [MIT License](LICENSE).
 
-```
-```

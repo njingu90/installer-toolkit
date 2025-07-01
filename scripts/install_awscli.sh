@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ── Logging helpers ─────────────────────────────────────────────────────────────
+# ── Logging helpers ───────────────────────────────
 log()     { echo -e "ℹ️  awscli: $*"; }
 success() { echo -e "✅  awscli: $*"; }
 warn()    { echo -e "⚠️  awscli: $*" >&2; }
 error()   { echo -e "❌  awscli: $*" >&2; exit 1; }
 
-# ── Parse version argument ───────────────────────────────────────────────────────
-VERSION="${1:-LATEST}"
-
-# ── Detect OS and ARCH ──────────────────────────────────────────────────────────
+# ── Detect OS and ARCH ────────────────────────────
 OS="$(uname | tr '[:upper:]' '[:lower:]')"
 case "$OS" in
   linux|darwin) ;;
@@ -19,59 +16,28 @@ esac
 
 ARCH_RAW="$(uname -m)"
 case "$ARCH_RAW" in
-  x86_64)   ARCH="x86_64" ;;
-  aarch64)  ARCH="arm64"  ;;
-  arm64)    ARCH="arm64"  ;;
-  *)        error "unsupported architecture: $ARCH_RAW" ;;
+  x86_64|amd64) ARCH="x86_64" ;;
+  arm64|aarch64) ARCH="arm64" ;;
+  *) error "unsupported architecture: $ARCH_RAW" ;;
 esac
 
-# ── Helper to fetch the real latest version tag via GitHub API ───────────────────
-fetch_latest() {
-  curl -sL https://api.github.com/repos/aws/aws-cli/releases/latest \
-    | grep '"tag_name":' \
-    | sed -E 's/.*"([^"]+)".*/\1/'
-}
-
-TAG="$VERSION"
-if [[ "$VERSION" == "LATEST" || -z "$VERSION" ]]; then
-  TAG="$(fetch_latest)"
-  log "resolved latest version → $TAG"
-fi
-
-# ── Build download URL & filename ───────────────────────────────────────────────
+# ── Download & install ────────────────────────────
 if [[ "$OS" == "linux" ]]; then
-  FILENAME="awscli-exe-${OS}-${ARCH}-${TAG}.zip"
-  URL="https://awscli.amazonaws.com/${FILENAME}"
+  TMP_DIR="$(mktemp -d)"
+  cd "$TMP_DIR"
+  log "downloading AWS CLI latest zip for Linux $ARCH"
+  curl -s "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}.zip" -o "awscliv2.zip"
+  unzip -q awscliv2.zip
+  sudo ./aws/install --update
+  cd -
+  rm -rf "$TMP_DIR"
 else
   # macOS
-  FILENAME="AWSCLIV2-${TAG}.pkg"
-  URL="https://awscli.amazonaws.com/${FILENAME}"
+  PKG_FILE="AWSCLIV2.pkg"
+  log "downloading AWS CLI latest pkg for macOS"
+  curl -s "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "$PKG_FILE"
+  sudo installer -pkg "$PKG_FILE" -target /
+  rm -f "$PKG_FILE"
 fi
 
-# ── Download (with fallback to latest if specific version missing) ───────────────
-log "downloading from $URL"
-if ! curl --fail -L "$URL" -o "$FILENAME"; then
-  warn "version '$TAG' not found, falling back to latest"
-  TAG="$(fetch_latest)"
-  log "resolved latest version → $TAG"
-  if [[ "$OS" == "linux" ]]; then
-    FILENAME="awscli-exe-linux-${ARCH}-${TAG}.zip"
-    URL="https://awscli.amazonaws.com/${FILENAME}"
-  else
-    FILENAME="AWSCLIV2.pkg"
-    URL="https://awscli.amazonaws.com/AWSCLIV2.pkg"
-  fi
-  curl -L "$URL" -o "$FILENAME"
-fi
-
-# ── Install ─────────────────────────────────────────────────────────────────────
-if [[ "$OS" == "linux" ]]; then
-  unzip -q "$FILENAME"
-  sudo ./aws/install --update
-  rm -rf "$FILENAME" aws
-else
-  sudo installer -pkg "$FILENAME" -target /
-  rm -f "$FILENAME"
-fi
-
-success "installed awscli $TAG"
+success "AWS CLI installed successfully (latest version)"

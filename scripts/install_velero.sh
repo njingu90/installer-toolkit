@@ -4,89 +4,53 @@
 # Velero is a tool for managing backups and restores of Kubernetes clusters.
 set -euo pipefail
 
-# === Configuration ===
-REPO="vmware-tanzu/velero"
-INSTALL_DIR="/usr/local/bin"    # adjust if you prefer another location
+# ── Logging helpers ───────────────────────────────
+log()     { echo -e "ℹ️  velero: $*"; }
+success() { echo -e "✅  velero: $*"; }
+warn()    { echo -e "⚠️  velero: $*" >&2; }
+error()   { echo -e "❌  velero: $*" >&2; exit 1; }
 
-# === Detect platform ===
+# ── Config ────────────────────────────────────────
+REPO="vmware-tanzu/velero"
+INSTALL_DIR="/usr/local/bin"
+
+# ── Detect OS & ARCH ─────────────────────────────
 OS="$(uname | tr '[:upper:]' '[:lower:]')"
-ARCH="$(uname -m)"
-case "$ARCH" in
-  x86_64) ARCH="amd64" ;;
-  aarch64) ARCH="arm64" ;;
+ARCH_RAW="$(uname -m)"
+case "$ARCH_RAW" in
+  x86_64)      ARCH="amd64" ;;
+  aarch64)     ARCH="arm64" ;;
   armv7*|armv6*) ARCH="arm" ;;
-  *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
+  *) error "unsupported architecture: $ARCH_RAW" ;;
 esac
 
-# === Fetch latest tag ===
+# ── Fetch latest tag ─────────────────────────────
 LATEST_TAG="$(curl -sL "https://api.github.com/repos/$REPO/releases/latest" \
   | grep '"tag_name":' \
   | sed -E 's/.*"([^"]+)".*/\1/')"
 
 if [[ -z "$LATEST_TAG" ]]; then
-  echo "Failed to determine latest Velero release."
-  exit 1
+  error "failed to determine latest Velero release"
 fi
 
-# === Build download URL ===
+log "resolved latest version → $LATEST_TAG"
+
+# ── Build download URL ───────────────────────────
 TARBALL="velero-${LATEST_TAG}-${OS}-${ARCH}.tar.gz"
-DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${LATEST_TAG}/${TARBALL}"
+URL="https://github.com/${REPO}/releases/download/${LATEST_TAG}/${TARBALL}"
 
-echo "Downloading Velero ${LATEST_TAG} for ${OS}/${ARCH}..."
-curl -L --progress-bar "$DOWNLOAD_URL" -o "$TARBALL"
+# ── Download ─────────────────────────────────────
+log "downloading from $URL"
+curl -sL --fail "$URL" -o "$TARBALL"
 
-echo "Extracting..."
+# ── Extract & install ───────────────────────────
+log "extracting $TARBALL"
 tar -xzf "$TARBALL"
 
-# The extracted folder is named like velero-<tag>-<os>-<arch>/
 EXTRACTED_DIR="velero-${LATEST_TAG}-${OS}-${ARCH}"
-
-echo "Installing to ${INSTALL_DIR} (requires sudo)..."
 sudo mv "${EXTRACTED_DIR}/velero" "${INSTALL_DIR}/velero"
 
-# Cleanup
+# ── Cleanup ──────────────────────────────────────
 rm -rf "$TARBALL" "$EXTRACTED_DIR"
 
-echo "✅ Velero ${LATEST_TAG} installed to ${INSTALL_DIR}/velero"
-#!/usr/bin/env bash
-set -euo pipefail
-
-VERSION="${1:-LATEST}"
-REPO="vmware-tanzu/velero"
-
-# detect OS/ARCH
-OS="$(uname | tr '[:upper:]' '[:lower:]')"
-ARCH="$(uname -m)"
-case "$ARCH" in
-  x86_64) ARCH="amd64" ;;
-  aarch64) ARCH="arm64" ;;
-  *) ARCH="arm" ;;
-esac
-
-fetch_latest_tag(){
-  curl -sL "https://api.github.com/repos/$REPO/releases/latest" \
-    | grep '"tag_name":' \
-    | sed -E 's/.*"([^"]+)".*/\1/'
-}
-
-TAG="$VERSION"
-if [[ "$VERSION" == "LATEST" ]]; then
-  TAG="$(fetch_latest_tag)"
-  echo "ℹ️  velero: resolved latest tag $TAG"
-fi
-
-TARBALL="velero-${TAG}-${OS}-${ARCH}.tar.gz"
-URL="https://github.com/${REPO}/releases/download/${TAG}/${TARBALL}"
-
-curl --fail -L "$URL" -o "$TARBALL" || {
-  echo "⚠️  velero: version '$TAG' not found, will retry latest"
-  TAG="$(fetch_latest_tag)"
-  URL="https://github.com/${REPO}/releases/download/${TAG}/velero-${TAG}-${OS}-${ARCH}.tar.gz"
-  curl -L "$URL" -o "$TARBALL"
-}
-
-echo "ℹ️  Extracting $TARBALL…"
-tar -xzf "$TARBALL"
-sudo mv "velero-${TAG}-${OS}-${ARCH}/velero" /usr/local/bin/velero
-rm -rf "$TARBALL" "velero-${TAG}-${OS}-${ARCH}"
-echo "✅  velero ${TAG} installed"
+success "Velero ${LATEST_TAG} installed to ${INSTALL_DIR}/velero"
