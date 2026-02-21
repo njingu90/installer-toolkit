@@ -1,61 +1,52 @@
-# .github/workflows/lint-and-test.yml
 name: Lint & Test
 
 on:
   push:
     paths:
       - 'main.sh'
+      - 'install.sh'
+      - 'lib/**/*.sh'
       - 'scripts/**/*.sh'
+      - 'test/**/*.bats'
       - '.github/workflows/lint-and-test.yml'
   pull_request:
     paths:
       - 'main.sh'
+      - 'install.sh'
+      - 'lib/**/*.sh'
       - 'scripts/**/*.sh'
+      - 'test/**/*.bats'
+      - '.github/workflows/lint-and-test.yml'
   workflow_dispatch:
 
 jobs:
-  # 3. Smoke-test installers with Bats
-  bats:
-    name: BATS Smoke Tests
+  lint:
+    name: Shell Lint & Syntax
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # install Bats for shell unit tests
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Bash syntax check
+        run: bash -n main.sh install.sh lib/*.sh scripts/*.sh
+
+      - name: Shellcheck
+        run: shellcheck main.sh install.sh lib/*.sh scripts/*.sh
+
+  bats:
+    name: BATS Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Install Bats
         run: |
           sudo apt-get update
           sudo apt-get install -y bats
 
-      # run any .bats tests you create under tests/
       - name: Run BATS tests
-        run: |
-          if [ -d tests ]; then
-            bats --tap tests | tee bats-output.tap
-            grep -q "^not ok" bats-output.tap && exit 1 || true
-          else
-            echo "⚠️  no tests/ directory found, skipping BATS"
-          fi
-
-      # ensure your main.sh at least shows help without error
-      - name: Smoke-test main.sh --help
-        run: bash main.sh help
-
-  # 4. Test installation of all tools
-  install-all-tools:
-    name: Install All Tools
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Make main.sh executable
-        run: chmod +x main.sh
-
-      - name: Make all scripts in scripts/ executable
-        run: |
-          if [ -d scripts ]; then
-            chmod +x scripts/*.sh
-          fi
-
-      - name: Run installation for all tools
-        run: sudo ./main.sh --all
+        run: bats --print-output-on-failure test
