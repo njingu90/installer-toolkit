@@ -54,8 +54,8 @@ terraform-install() {
   (cd "${HOME}/bin" && unzip -o "$TMP_ZIP")
 
   # Ensure PATH is set in .bashrc
-  if ! grep -q 'export PATH="$HOME/bin:$PATH"' ~/.bashrc; then
-    echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+  if ! grep -q "export PATH=\"\$HOME/bin:\$PATH\"" ~/.bashrc; then
+    echo "export PATH=\"\$HOME/bin:\$PATH\"" >> ~/.bashrc
   fi
 
   rm -f "$TMP_ZIP"

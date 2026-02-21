@@ -1,10 +1,10 @@
-#  🚀 Installer Toolkit
-Simple Bash installer for dev tools
+# 🚀 Installer Toolkit
+Simple Bash installer for DevOps tools with a single `--all` workflow.
 
-[![Lint & Test](https://github.com/njingu90/installer-toolkit/actions/workflows/lint-and-test.yml/badge.svg)](https://github.com/njingu90/installer-toolkit/actions/workflows/lint-and-test.yml) 
+[![Lint & Test](https://github.com/njingu90/installer-toolkit/actions/workflows/lint-and-test.yml/badge.svg)](https://github.com/njingu90/installer-toolkit/actions/workflows/lint-and-test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> A simple, reliable toolkit to install the latest versions of popular developer and DevOps tools.
+> Install common tools only when missing, and capture logs in `/tmp/installer-toolkit.txt`.
 
 ## 💡 Supported tools
 
@@ -13,59 +13,53 @@ Simple Bash installer for dev tools
 * eksctl (`eksctl`)
 * Terraform (`terraform`)
 * Velero (`velero`)
-* Docker & Docker Compose (`docker`)
+* Docker (`docker`)
 
 ## ⚙️ Prerequisites
 
 * Linux (Ubuntu/Debian) or macOS
 * `bash` shell
 * `sudo` access
-* `fzf` (optional, for interactive selection)
+* `git`, `curl`, `jq`, and `unzip` available
 
 ## 🚀 Quick Start
 
+### Option 1: one-liner (recommended)
+
 ```bash
-# Clone the repository
-git clone https://github.com/njingu90/installer-toolkit.git
-cd installer-toolkit
-chmod +x main.sh
-
-# Install all tools
-./main.sh --all
-
-# Or install specific tools
-./main.sh awscli terraform
-
-# Or use interactive selection
-./main.sh
+curl -fsSL https://raw.githubusercontent.com/njingu90/installer-toolkit/main/install.sh | bash
 ```
 
-## 📚 Usage Options
+### Option 2: clone and run
 
-1. **Install all tools**:
-   ```bash
-   ./main.sh --all
-   ```
+```bash
+git clone https://github.com/njingu90/installer-toolkit.git
+cd installer-toolkit
+chmod +x main.sh scripts/*.sh
+./main.sh --all
+```
 
-2. **Install specific tools**:
-   ```bash
-   ./main.sh awscli terraform docker
-   ```
+## 📚 Usage
 
-3. **Interactive selection**:
-   ```bash
-   ./main.sh
-   ```
+The entrypoint supports **only** one command:
 
-4. **Show help**:
-   ```bash
-   ./main.sh help
-   ```
+```bash
+./main.sh --all
+```
+
+Behavior:
+
+1. Checks whether each supported tool is already installed.
+2. Installs only missing tools.
+3. Logs all output to `/tmp/installer-toolkit.txt`.
 
 ## 🗂️ Project Structure
 
-```
+```text
 installer-toolkit/
+├── lib/
+│   ├── common.sh
+│   └── tools.sh
 ├── scripts/
 │   ├── install_awscli.sh
 │   ├── install_docker.sh
@@ -73,45 +67,19 @@ installer-toolkit/
 │   ├── install_kubectl.sh
 │   ├── install_terraform.sh
 │   └── install_velero.sh
+├── install.sh
 ├── main.sh
 └── README.md
 ```
 
-## ⚡ Automatic Installation
+## 🔍 Logs
 
-For automated installation (e.g., EC2 User Data):
+All runs write logs to:
 
-```bash
-#!/usr/bin/env bash
-set -eu
-LOG_DIR="/var/log/toolkit-install"
-LOG_FILE="$LOG_DIR/install.log"
-sudo mkdir -p "$LOG_DIR"
-
-{
-  echo "====== System update & prerequisites ======"
-  sudo apt-get update -y && sudo apt-get upgrade -y
-  sudo apt-get install -y git curl unzip jq
-
-  echo "====== Installing toolkit ======"
-  git clone --depth 1 https://github.com/njingu90/installer-toolkit.git
-  cd installer-toolkit
-  chmod +x main.sh
-  chmod +x scripts/*.sh
-  ./main.sh --all
-
-  echo "====== Done! If you installed tools like terraform, run: source ~/.bashrc"
-} 2>&1 | sudo tee "$LOG_FILE"
+```text
+/tmp/installer-toolkit.txt
 ```
-
-## 🔍 Troubleshooting
-
-* Check logs at `/var/log/toolkit-install/install.log` for automated installations
-* Run `./main.sh help` to see available tools
-* Ensure you have sudo access
-* For Docker issues on Linux, logout and login again after installation
 
 ## 📄 License
 
-MIT License - feel free to use and modify
-
+MIT License - feel free to use and modify.
