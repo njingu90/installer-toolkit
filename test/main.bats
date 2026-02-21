@@ -5,7 +5,6 @@ setup() {
   TMP_ROOT="$(mktemp -d)"
   WORKDIR="${TMP_ROOT}/repo"
 
-  cp "${REPO_ROOT}/main.sh" "$WORKDIR" 2>/dev/null || true
   mkdir -p "$WORKDIR/lib" "$WORKDIR/scripts" "$TMP_ROOT/bin"
   cp "${REPO_ROOT}/main.sh" "$WORKDIR/main.sh"
   cp "${REPO_ROOT}/lib/common.sh" "$WORKDIR/lib/common.sh"
