@@ -1,74 +1,54 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ── Configuration ────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
 
-# ── Helpers ───────────────────────f──────────────
-log()     { echo -e "ℹ️  $*"; }
-success() { echo -e "✅  $*"; }
-warn()    { echo -e "⚠️  $*" >&2; }
-error()   { echo -e "❌  $*" >&2; exit 1; }
+source "${SCRIPT_DIR}/lib/common.sh"
+source "${SCRIPT_DIR}/lib/tools.sh"
 
-# Modified usage function
 usage() {
-  cat <<EOF
+  cat <<USAGE
 Usage:
-  $(basename "$0") help
   $(basename "$0") --all
-  $(basename "$0") TOOL [TOOL...]
-  $(basename "$0") (no args → fzf)
 
-Examples:
-  $(basename "$0") help
-  $(basename "$0") --all
-  $(basename "$0") awscli terraform docker
-  $(basename "$0") (and select with fzf)
-
-Available tools:
-$(ls "$SCRIPTS_DIR"/install_*.sh 2>/dev/null | xargs -n1 basename | sed -E 's/install_(.*)\.sh/  - \1/')
-
-If you run with no arguments and have 'fzf' installed, you can select tools interactively.
-EOF
+Notes:
+  * --all is required and will only install tools that are missing.
+  * Logs are written to ${LOG_FILE}.
+USAGE
 }
 
-# ── Pick tools ───────────────────────────────────
-get_available_tools() {
-  ls "$SCRIPTS_DIR"/install_*.sh 2>/dev/null | xargs -n1 basename | sed -E 's/install_(.*)\.sh/\1/'
-}
-
-if (( $# == 0 )); then
-  if command -v fzf &>/dev/null; then
-    log "Select tool(s) to install (multi-select with TAB, ENTER when done):"
-    mapfile -t tools < <(get_available_tools | fzf --multi --prompt="→ ")
-    (( ${#tools[@]} )) || { usage; exit; }
-  else
-    usage; exit 1
-  fi
-else
-  case "$1" in
-    help|-h|--help) usage; exit ;;
-    --all) 
-      mapfile -t tools < <(get_available_tools)
-      log "Installing all available tools..."
-      ;;
-    *) tools=("$@") ;;
-  esac
+if [[ "${1:-}" == "help" || "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
 fi
 
-# ── Install loop ────────────────────────────────
-for tool in "${tools[@]}"; do
-  script="${SCRIPTS_DIR}/install_${tool}.sh"
-  if [[ ! -x "$script" ]]; then
-    warn "installer not found or not executable: $script"
+if [[ "${1:-}" != "--all" || "$#" -ne 1 ]]; then
+  usage
+  error "This script only supports the --all flag"
+fi
+
+setup_logging
+log "Starting installer-toolkit with --all"
+
+for tool in "${TOOLS[@]}"; do
+  if is_installed "$tool"; then
+    success "$tool is already installed; skipping"
     continue
   fi
 
-  log "→ Installing $tool (latest version)"
+  script="$(installer_for "$tool")"
+  if [[ ! -x "$script" ]]; then
+    warn "Installer missing or not executable: $script"
+    continue
+  fi
+
+  log "Installing missing tool: $tool"
   if bash "$script"; then
     success "$tool installed successfully"
   else
-    error "$tool install failed!"
+    error "$tool installation failed"
   fi
 done
+
+success "Installer run complete"
