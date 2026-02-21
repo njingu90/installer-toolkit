@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC2034 # Referenced by main.sh after sourcing this file.
 TOOLS=(awscli kubectl eksctl terraform velero docker)
 
 installer_for() {
